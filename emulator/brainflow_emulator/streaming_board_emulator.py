@@ -8,7 +8,7 @@ from brainflow_emulator.emulate_common import TestFailureError, log_multilines
 
 
 def run_test(cmd_list):
-    logging.info('Running %s' % ' '.join([str(x) for x in cmd_list]))
+    logging.info(f"Running {' '.join([str(x) for x in cmd_list])}")
     process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
 
@@ -16,7 +16,11 @@ def run_test(cmd_list):
     log_multilines(logging.info, stderr)
 
     if process.returncode != 0:
-        raise TestFailureError('Test failed with exit code %s' % str(process.returncode), process.returncode)
+        raise TestFailureError(
+            f'Test failed with exit code {str(process.returncode)}',
+            process.returncode,
+        )
+
 
     return stdout, stderr
 

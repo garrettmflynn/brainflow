@@ -23,12 +23,10 @@ class ShieldWriter(threading.Thread):
 
     def run(self):
         while self.need_data:
-            package = list()
+            package = []
             for _ in range(6):
-                package.append(0xA0)
-                package.append(self.package_num)
-                for i in range(2, self.package_size - 1):
-                    package.append(randint(0, 255))
+                package.extend((0xA0, self.package_num))
+                package.extend(randint(0, 255) for _ in range(2, self.package_size - 1))
                 package.append(0xC0)
                 self.package_num = self.package_num + 1
                 if self.package_num % 256 == 0:
@@ -51,7 +49,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _html(self, message):
-        content = "<html><body><h1>%s</h1></body></html>" % message
+        content = f"<html><body><h1>{message}</h1></body></html>"
         return content.encode("utf8")
 
     def do_GET(self):
@@ -61,19 +59,17 @@ class Handler(BaseHTTPRequestHandler):
         global port
 
         if (self.path == '/stream/start'):
-            logging.info('ip %s port %s' % (str(ip), str(port)))
+            logging.info(f'ip {str(ip)} port {str(port)}')
             if send_sock is None:
                 raise TestFailureError('socket was not created', -1)
-            else:
-                write_thread = ShieldWriter(send_sock)
-                write_thread.daemon = True
-                write_thread.start()
-        elif (self.path == '/stream/stop'):
+            write_thread = ShieldWriter(send_sock)
+            write_thread.daemon = True
+            write_thread.start()
+        elif self.path == '/stream/stop':
             if write_thread is None:
                 raise TestFailureError('send thread was not created', -1)
-            else:
-                write_thread.need_data = False
-                write_thread.join()
+            write_thread.need_data = False
+            write_thread.join()
 
         self._set_headers()
         self.wfile.write(self._html("get was called"))
@@ -126,7 +122,7 @@ def test_shield(cmd_list):
     server = ThreadedHTTPServer()
     server.start()
 
-    logging.info('Running %s' % ' '.join([str(x) for x in cmd_list]))
+    logging.info(f"Running {' '.join([str(x) for x in cmd_list])}")
     process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
 
@@ -136,7 +132,11 @@ def test_shield(cmd_list):
     log_multilines(logging.info, stderr)
 
     if process.returncode != 0:
-        raise TestFailureError('Test failed with exit code %s' % str(process.returncode), process.returncode)
+        raise TestFailureError(
+            f'Test failed with exit code {str(process.returncode)}',
+            process.returncode,
+        )
+
 
     return stdout, stderr
 

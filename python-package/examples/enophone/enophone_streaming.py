@@ -30,9 +30,9 @@ class Graph:
 
 
     def _init_timeseries(self):
-        self.plots = list()
-        self.curves = list()
-        self.legends = list()
+        self.plots = []
+        self.curves = []
+        self.legends = []
 
         for i in range(len(self.exg_channels)):
             p = self.win.addPlot(row=i,col=0)
@@ -61,7 +61,7 @@ class Graph:
             data = enotools.signal_filtering(data,filter_cut=250,bandpass_range=[3,40],bandstop_range=self.mains)
 
             for count, channel in enumerate(self.exg_channels):
-                name = self.plot_names[count] + ': ' + str(quality[count])
+                name = f'{self.plot_names[count]}: {str(quality[count])}'
                 self.curves[count].setData(data[channel].tolist())
                 self.legends[count].getLabel(self.curves[count]).setText(name)
                 if quality[count] >= 99:

@@ -28,7 +28,7 @@ def test_serial(cmd_list, master, slave, s_name):
     listen_thread.start()
 
     cmd_to_run = cmd_list + [s_name]
-    logging.info('Running %s' % ' '.join([str(x) for x in cmd_to_run]))
+    logging.info(f"Running {' '.join([str(x) for x in cmd_to_run])}")
     process = subprocess.Popen(cmd_to_run, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
 
@@ -36,7 +36,11 @@ def test_serial(cmd_list, master, slave, s_name):
     log_multilines(logging.info, stderr)
 
     if process.returncode != 0:
-        raise TestFailureError('Test failed with exit code %s' % str(process.returncode), process.returncode)
+        raise TestFailureError(
+            f'Test failed with exit code {str(process.returncode)}',
+            process.returncode,
+        )
+
 
     return stdout, stderr
 

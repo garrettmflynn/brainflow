@@ -27,13 +27,13 @@ def install_com0com():
     directory = os.path.join(this_directory, 'com0com')
     if not os.path.exists(directory):
         os.makedirs(directory)
-    cmds = [get_isntaller(), '/NCRC', '/S', '/D=%s' % directory]
-    logging.info('running %s' % ' '.join(cmds))
+    cmds = [get_isntaller(), '/NCRC', '/S', f'/D={directory}']
+    logging.info(f"running {' '.join(cmds)}")
     p = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     if p.returncode != 0:
-        logging.error('stdout is %s' % out)
-        logging.error('stderr is %s' % err)
+        logging.error(f'stdout is {out}')
+        logging.error(f'stderr is {err}')
         raise Exception('com0com installation failure')
     logging.info('Sleeping a few second, it doesnt work in appveyour without it')
     time.sleep(10)
@@ -46,18 +46,27 @@ def get_ports_windows():
     p = subprocess.Popen([os.path.join(directory, 'setupc.exe'), 'remove', '0'],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=directory)
     stdout, stderr = p.communicate()
-    logging.info('remove stdout is %s' % stdout)
-    logging.info('remove stderr is %s' % stderr)
+    logging.info(f'remove stdout is {stdout}')
+    logging.info(f'remove stderr is {stderr}')
 
     m_name = 'COM16'
     s_name = 'COM17'
 
     p = subprocess.Popen(
-        [os.path.join(directory, 'setupc.exe'), 'install', 'PortName=%s' % m_name, 'PortName=%s' % s_name],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=directory)
+        [
+            os.path.join(directory, 'setupc.exe'),
+            'install',
+            f'PortName={m_name}',
+            f'PortName={s_name}',
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=directory,
+    )
+
     stdout, stderr = p.communicate()
-    logging.info('install stdout is %s' % stdout)
-    logging.info('install stderr is %s' % stderr)
+    logging.info(f'install stdout is {stdout}')
+    logging.info(f'install stderr is {stderr}')
 
     if p.returncode != 0:
         raise Exception('com0com failure')
@@ -103,10 +112,12 @@ class Listener(threading.Thread):
                 self.writer_process.daemon = True
                 self.writer_process.start()
             elif 's' in res.decode('utf-8'):
-                if self.writer_process is not None:
-                    if self.writer_process.is_alive():
-                        self.writer_process.need_data = False
-                        self.writer_process.join()
+                if (
+                    self.writer_process is not None
+                    and self.writer_process.is_alive()
+                ):
+                    self.writer_process.need_data = False
+                    self.writer_process.join()
             else:
                 # we dont handle commands to turn on/off channels, gain signal and so on. such commands dont change package format
                 logging.info('got command "%s"' % res)
@@ -128,12 +139,10 @@ class GaleaWriter(threading.Thread):
             if self.package_num % 256 == 0:
                 self.package_num = 0
 
-            package = list()
-            package.append(0xA0)
-            for i in range(self.package_size):
-                package.append(random.randint(0, 255))
+            package = [160]
+            package.extend(random.randint(0, 255) for _ in range(self.package_size))
             package.append(0xC0)
-            logging.debug('package is %s' % ' '.join([str(x) for x in package]))
+            logging.debug(f"package is {' '.join([str(x) for x in package])}")
             self.write(self.port, bytes(package))
 
             self.package_num = self.package_num + 1

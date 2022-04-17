@@ -6,10 +6,7 @@ import multiprocessing as mp
 
 def split_data(data):
     (dataset_x, dataset_y) = data
-    x_list = list()
-    for i in dataset_x:
-        x_list.append(i.tolist())
-
+    x_list = [i.tolist() for i in dataset_x]
     x_train, x_test, y_train, y_test = train_test_split(x_list, dataset_y, test_size=0.2, random_state=1)
     return (x_train, y_train, x_test, y_test)
 
@@ -52,11 +49,9 @@ def train_brainflow_search_svm(data):
 
 def train_brainflow_svm(data):
     x_train, y_train, x_test, y_test = split_data(data)
-    C = 256
-    gamma = 4
     print('#### SVM ####')
     prob = svm_problem(y_train, x_train)
-    par_str = f'-c {C} -g {gamma} -b 1 '
+    par_str = '-c 256 -g 4 -b 1 '
     param = svm_parameter(par_str)
     model = svm_train(prob, param)
     p_label, p_acc, p_val = svm_predict(y_test, x_test, model)
