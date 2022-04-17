@@ -27,13 +27,19 @@ class DataThread(threading.Thread):
         needed_duration = 10  # in seconds
         time_sleep = 1
         counter_for_duration = 0
-        counter_max = int(needed_duration/time_sleep)
+        counter_max = needed_duration // time_sleep
         current_time = str(time.time())
         folder_name = str(self.board.get_board_id())
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
-        brainflow_output_file = os.path.join(folder_name, 'brainflow' + current_time + '.csv')
-        song_features_output_file = os.path.join(folder_name, 'songs' + current_time + '.csv')
+        brainflow_output_file = os.path.join(
+            folder_name, f'brainflow{current_time}.csv'
+        )
+
+        song_features_output_file = os.path.join(
+            folder_name, f'songs{current_time}.csv'
+        )
+
 
         while self.keep_alive:
             time.sleep(time_sleep)
@@ -55,7 +61,11 @@ class DataThread(threading.Thread):
                     elif not track.get('is_playing', True):
                         is_end = True
                 except AttributeError as e:
-                    BoardShim.log_message(LogLevels.LEVEL_WARN.value, 'Exception occured, more likely because of ads(its ok): %s' % str(e))
+                    BoardShim.log_message(
+                        LogLevels.LEVEL_WARN.value,
+                        f'Exception occured, more likely because of ads(its ok): {str(e)}',
+                    )
+
             else:
                 is_end = True
 
@@ -67,7 +77,11 @@ class DataThread(threading.Thread):
                 if is_playing and counter_for_duration >= counter_max and prev_song_id is not None and data.shape[1] > 1:
                     DataFilter.write_file(data, brainflow_output_file, 'a')
                     features = self.spotify.audio_features(prev_song_id)
-                    BoardShim.log_message(LogLevels.LEVEL_DEBUG.value, 'adding info about song: %s' % prev_song_id)
+                    BoardShim.log_message(
+                        LogLevels.LEVEL_DEBUG.value,
+                        f'adding info about song: {prev_song_id}',
+                    )
+
                     features_df = pd.DataFrame.from_dict(features)
                     music_feature = features_df[['danceability', 'energy', 'loudness', 'speechiness',
                         'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 'id']]

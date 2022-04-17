@@ -78,25 +78,25 @@ if read_the_docs_build:
     output_dir = 'build-cpp'
     configure_doxyfile(input_dir, output_dir, 'BrainFlowCpp')
     subprocess.call('doxygen', shell=True)
-    breathe_projects['BrainFlowCpp'] = output_dir + '/xml'
+    breathe_projects['BrainFlowCpp'] = f'{output_dir}/xml'
     # java binding
     input_dir = '../java-package'
     output_dir = 'build-java'
     configure_doxyfile(input_dir, output_dir, 'BrainFlowJava')
     subprocess.call('doxygen', shell=True)
-    breathe_projects['BrainFlowJava'] = output_dir + '/xml'
+    breathe_projects['BrainFlowJava'] = f'{output_dir}/xml'
     # c# binding
     input_dir = '../csharp-package'
     output_dir = 'build-csharp'
     configure_doxyfile(input_dir, output_dir, 'BrainFlowCsharp')
     subprocess.call('doxygen', shell=True)
-    breathe_projects['BrainFlowCsharp'] = output_dir + '/xml'
+    breathe_projects['BrainFlowCsharp'] = f'{output_dir}/xml'
     # core api, we dont use it right now but maybe later we will docs for developers too
     input_dir = '../src'
     output_dir = 'build-core'
     configure_doxyfile(input_dir, output_dir, 'BrainFlowCore')
     subprocess.call('doxygen', shell=True)
-    breathe_projects['BrainFlowCore'] = output_dir + '/xml'
+    breathe_projects['BrainFlowCore'] = f'{output_dir}/xml'
 
 
 # sphinx.ext.autodoc

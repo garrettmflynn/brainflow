@@ -16,8 +16,7 @@ def filter(signal, lowerbound, upperbound, nyquist_f, filtertype, order):
     bandpass_filter_window = np.array([lowerbound, upperbound]) / nyquist_f
 
     a, b = butter(N=order, Wn=bandpass_filter_window, btype=filtertype)
-    filtered = filtfilt(a, b, signal)
-    return filtered
+    return filtfilt(a, b, signal)
 
 def signal_filtering(data,filter_cut=None,bandpass_range=None,bandstop_range=None, samplerate=250):
 
@@ -25,10 +24,16 @@ def signal_filtering(data,filter_cut=None,bandpass_range=None,bandstop_range=Non
 
     if bandpass_range:
         if bandpass_range[0] <= 0:
-            print('ERROR: First value of the bandpass filter must be above 0. The value is: {}'.format(bandpass_range[0]))
+            print(
+                f'ERROR: First value of the bandpass filter must be above 0. The value is: {bandpass_range[0]}'
+            )
+
             sys.exit(1)
         if bandpass_range[1] >= 125:
-            print('ERROR: Second value of the bandpass filter must be below 125. The value is: {}'.format(bandpass_range[1]))
+            print(
+                f'ERROR: Second value of the bandpass filter must be below 125. The value is: {bandpass_range[1]}'
+            )
+
             sys.exit(1)
         try:
             for i in (1,2,3,4):
@@ -45,10 +50,16 @@ def signal_filtering(data,filter_cut=None,bandpass_range=None,bandstop_range=Non
 
     if bandstop_range:
         if bandstop_range[0] <= 0:
-            print('ERROR: First value of the bandstop filter must be above 0. The value is: {}'.format(bandstop_range[0]))
+            print(
+                f'ERROR: First value of the bandstop filter must be above 0. The value is: {bandstop_range[0]}'
+            )
+
             sys.exit(1)
         if bandstop_range[1] >= 125:
-            print('ERROR: Second value of the bandstop filter must be below 125. The value is: {}'.format(bandstop_range[1]))
+            print(
+                f'ERROR: Second value of the bandstop filter must be below 125. The value is: {bandstop_range[1]}'
+            )
+
             sys.exit(1)
 
         try:
@@ -73,7 +84,7 @@ def detect_mains(data):
     ix_60 = np.logical_and(freqs >= 59.8, freqs < 60.2)
     ix_50 = np.logical_and(freqs >= 49.8, freqs < 50.2)
 
-    for i in range(0,fft.shape[1]):
+    for i in range(fft.shape[1]):
         chan_fft = fft[:,i]
         xref_50 = np.sum(chan_fft[ix_50])
         xref_60 = np.sum(chan_fft[ix_60])
@@ -97,15 +108,15 @@ def quality(data):
 
     ix_power = np.logical_and(freqs >= 10, freqs < 40)
 
-    for i in range(0,fft.shape[1]):
+    for i in range(fft.shape[1]):
         chan_fft = fft[:,i].copy()
         power[i] = np.sum(chan_fft[ix_power])
 
     #Using A1 or A2 as reference for "best contact"
     #The quality metric will only be relevant as long as one of A1 or A2 touches
-    ref = np.max(power[0:2])
+    ref = np.max(power[:2])
 
-    for i in range(0,fft.shape[1]):
+    for i in range(fft.shape[1]):
         quality[i] = 1-abs(1-power[i]/ref)
 
     if quality[0] > quality[1]:
@@ -121,13 +132,13 @@ def referencing(data, mode):
 
     if mode=='mastoid':
         reference = (local_data[1,:]+local_data[2,:])/2
-    elif mode=='Left Cushion' or mode=='A1':
+    elif mode in ['Left Cushion', 'A1']:
         reference = local_data[2,:].copy()
-    elif mode=='Right Cushion' or mode=='A2':
+    elif mode in ['Right Cushion', 'A2']:
         reference = local_data[1,:].copy()
-    elif mode=='Top Right' or mode=='C4':
+    elif mode in ['Top Right', 'C4']:
         reference = local_data[3,:].copy()
-    elif mode=='Top Left' or mode=='C3':
+    elif mode in ['Top Left', 'C3']:
         reference = local_data[4,:].copy()
     elif mode=='Average':
         reference = np.mean(local_data[(1,2,3,4),:],axis=0).copy()

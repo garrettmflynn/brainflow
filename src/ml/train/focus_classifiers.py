@@ -24,8 +24,8 @@ def prepare_data():
     # use different windows, its kinda data augmentation
     window_sizes = [4.0, 6.0, 8.0, 10.0]
     overlaps = [0.5, 0.45, 0.4, 0.35] # percentage of window_size
-    dataset_x = list()
-    dataset_y = list()
+    dataset_x = []
+    dataset_y = []
     for data_type in ('relaxed', 'focused'):
         for file in glob.glob(os.path.join('data', data_type, '*', '*.csv')):
             print(file)
@@ -36,10 +36,7 @@ def prepare_data():
                 sampling_rate = BoardShim.get_sampling_rate(board_id)
                 eeg_channels = get_eeg_channels(board_id)
                 for num, window_size in enumerate(window_sizes):
-                    if data_type == 'focused':
-                        cur_pos = sampling_rate * 10  # skip a little more for focus
-                    else:
-                        cur_pos = sampling_rate * 3
+                    cur_pos = sampling_rate * 10 if data_type == 'focused' else sampling_rate * 3
                     while cur_pos + int(window_size * sampling_rate) < data.shape[1]:
                         data_in_window = data[:, cur_pos:cur_pos + int(window_size * sampling_rate)]
                         bands = DataFilter.get_avg_band_powers(data_in_window, eeg_channels, sampling_rate, True)
@@ -51,7 +48,7 @@ def prepare_data():
                             dataset_y.append(1)
                         cur_pos = cur_pos + int(window_size * overlaps[num] * sampling_rate)
             except Exception as e:
-                print(str(e))
+                print(e)
 
     print('Class 1: %d Class 0: %d' % (len([x for x in dataset_y if x == 1]), len([x for x in dataset_y if x == 0])))
 
@@ -68,16 +65,17 @@ def get_eeg_channels(board_id):
     # optional: filter some channels we dont want to consider
     try:
         eeg_names = BoardShim.get_eeg_names(board_id)
-        selected_channels = list()
         blacklisted_channels = {'T3', 'T4'}
-        # blacklisted_channels = set()
-        for i, channel in enumerate(eeg_names):
-            if not channel in blacklisted_channels:
-                selected_channels.append(eeg_channels[i])
+        selected_channels = [
+            eeg_channels[i]
+            for i, channel in enumerate(eeg_names)
+            if channel not in blacklisted_channels
+        ]
+
         eeg_channels = selected_channels
     except Exception as e:
-        print(str(e))
-    print('channels to use: %s' % str(eeg_channels))
+        print(e)
+    print(f'channels to use: {eeg_channels}')
     return eeg_channels
 
 
@@ -85,11 +83,11 @@ def train_lda(data):
     model = LinearDiscriminantAnalysis()
     print('#### Linear Discriminant Analysis ####')
     scores = cross_val_score(model, data[0], data[1], cv=5, scoring='f1_macro', n_jobs=8)
-    print('f1 macro %s' % str(scores))
+    print(f'f1 macro {str(scores)}')
     scores = cross_val_score(model, data[0], data[1], cv=5, scoring='precision_macro', n_jobs=8)
-    print('precision macro %s' % str(scores))
+    print(f'precision macro {str(scores)}')
     scores = cross_val_score(model, data[0], data[1], cv=5, scoring='recall_macro', n_jobs=8)
-    print('recall macro %s' % str(scores))
+    print(f'recall macro {str(scores)}')
     model.fit(data[0], data[1])
     write_model(model.intercept_, model.coef_, 'lda')
 
@@ -99,11 +97,11 @@ def train_regression(data):
                                max_iter=4000, penalty='l2', random_state=1)
     print('#### Logistic Regression ####')
     scores = cross_val_score(model, data[0], data[1], cv=5, scoring='f1_macro', n_jobs=8)
-    print('f1 macro %s' % str(scores))
+    print(f'f1 macro {str(scores)}')
     scores = cross_val_score(model, data[0], data[1], cv=5, scoring='precision_macro', n_jobs=8)
-    print('precision macro %s' % str(scores))
+    print(f'precision macro {str(scores)}')
     scores = cross_val_score(model, data[0], data[1], cv=5, scoring='recall_macro', n_jobs=8)
-    print('recall macro %s' % str(scores))
+    print(f'recall macro {str(scores)}')
     model.fit(data[0], data[1])
     write_model(model.intercept_, model.coef_, 'regression')
 
@@ -116,11 +114,11 @@ def train_knn(data):
         for j in range(5, 10):
             data_x[i][j] = data_x[i][j] / 5  # idea to make stddev less important than avg, 5 random value
     scores = cross_val_score(model, data_x, data[1], cv=5, scoring='f1_macro', n_jobs=8)
-    print('f1 macro %s' % str(scores))
+    print(f'f1 macro {str(scores)}')
     scores = cross_val_score(model, data_x, data[1], cv=5, scoring='precision_macro', n_jobs=8)
-    print('precision macro %s' % str(scores))
+    print(f'precision macro {str(scores)}')
     scores = cross_val_score(model, data_x, data[1], cv=5, scoring='recall_macro', n_jobs=8)
-    print('recall macro %s' % str(scores))
+    print(f'recall macro {str(scores)}')
     write_knn_model(data)
 
 
@@ -180,10 +178,10 @@ def print_dataset_info(data):
     x, y = data
     relaxed_ids = [idx[0] for idx in enumerate(y) if idx[1] == 0]
     focused_ids = [idx[0] for idx in enumerate(y) if idx[1] == 1]
-    print('Relaxed Ids %s ... %s' % (str(relaxed_ids[0:5]), str(relaxed_ids[-5:])))
-    print('Foced Ids %s ... %s' % (str(focused_ids[0:5]), str(focused_ids[-5:])))
-    x_focused = list()
-    x_relaxed = list()
+    print(f'Relaxed Ids {str(relaxed_ids[:5])} ... {str(relaxed_ids[-5:])}')
+    print(f'Foced Ids {str(focused_ids[:5])} ... {str(focused_ids[-5:])}')
+    x_focused = []
+    x_relaxed = []
 
     for i, x_data in enumerate(x):
         if i in relaxed_ids:

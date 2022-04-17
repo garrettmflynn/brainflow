@@ -35,18 +35,18 @@ class Graph:
         QtGui.QApplication.instance().exec_()
 
     def _init_pens(self):
-        self.pens = list()
-        self.brushes = list()
+        self.pens = []
+        self.brushes = []
         colors = ['#A54E4E', '#A473B6', '#5B45A4', '#2079D2', '#32B798', '#2FA537', '#9DA52F', '#A57E2F', '#A53B2F']
-        for i in range(len(colors)):
-            pen = pg.mkPen({'color': colors[i], 'width': 2})
+        for color in colors:
+            pen = pg.mkPen({'color': color, 'width': 2})
             self.pens.append(pen)
-            brush = pg.mkBrush(colors[i])
+            brush = pg.mkBrush(color)
             self.brushes.append(brush)
 
     def _init_timeseries(self):
-        self.plots = list()
-        self.curves = list()
+        self.plots = []
+        self.curves = []
         for i in range(len(self.exg_channels)):
             p = self.win.addPlot(row=i,col=0)
             p.showAxis('left', False)
@@ -66,7 +66,7 @@ class Graph:
         self.psd_plot.setMenuEnabled('left', False)
         self.psd_plot.setTitle('PSD Plot')
         self.psd_plot.setLogMode(False, True)
-        self.psd_curves = list()
+        self.psd_curves = []
         self.psd_size = DataFilter.get_nearest_power_of_two(self.sampling_rate)
         for i in range(len(self.exg_channels)):
             psd_curve = self.psd_plot.plot(pen=self.pens[i % len(self.pens)])
@@ -103,7 +103,10 @@ class Graph:
                 psd_data = DataFilter.get_psd_welch(data[channel], self.psd_size, self.psd_size // 2, self.sampling_rate,
                                    WindowFunctions.BLACKMAN_HARRIS.value)
                 lim = min(70, len(psd_data[0]))
-                self.psd_curves[count].setData(psd_data[1][0:lim].tolist(), psd_data[0][0:lim].tolist())
+                self.psd_curves[count].setData(
+                    psd_data[1][:lim].tolist(), psd_data[0][:lim].tolist()
+                )
+
                 # plot bands
                 avg_bands[0] = avg_bands[0] + DataFilter.get_band_power(psd_data, 1.0, 4.0)
                 avg_bands[1] = avg_bands[1] + DataFilter.get_band_power(psd_data, 4.0, 8.0)

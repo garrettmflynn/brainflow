@@ -40,11 +40,8 @@ class FreeEEG32Writer(threading.Thread):
             if self.package_num % 256 == 0:
                 self.package_num = 0
 
-            package = list()
-            package.append(0xA0)
-            package.append(self.package_num)
-            for i in range(2, self.package_size - 1):
-                package.append(i)
+            package = [160, self.package_num]
+            package.extend(iter(range(2, self.package_size - 1)))
             package.append(0xC0)
             logging.info(bytes(package))
             self.write(self.port, bytes(package))

@@ -25,8 +25,8 @@ def main():
 
     eeg_channels = BoardShim.get_eeg_channels(board_id)
     bands = DataFilter.get_avg_band_powers(data, eeg_channels, sampling_rate, True)
-    print("avg band powers : %s" % str(bands[0]))
-    print("stddev band powers : %s" % str(bands[1]))
+    print(f"avg band powers : {str(bands[0])}")
+    print(f"stddev band powers : {str(bands[1])}")
 
 
 if __name__ == "__main__":

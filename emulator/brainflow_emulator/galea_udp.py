@@ -25,7 +25,7 @@ class Message(enum.Enum):
 
 
 def test_socket(cmd_list):
-    logging.info('Running %s' % ' '.join([str(x) for x in cmd_list]))
+    logging.info(f"Running {' '.join([str(x) for x in cmd_list])}")
     process = subprocess.Popen(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
 
@@ -33,7 +33,11 @@ def test_socket(cmd_list):
     log_multilines(logging.info, stderr)
 
     if process.returncode != 0:
-        raise TestFailureError('Test failed with exit code %s' % str(process.returncode), process.returncode)
+        raise TestFailureError(
+            f'Test failed with exit code {str(process.returncode)}',
+            process.returncode,
+        )
+
 
     return stdout, stderr
 
@@ -61,7 +65,7 @@ class GaleaEmulator(threading.Thread):
         self.keep_alive = True
 
 
-    def run (self):
+    def run(self):
         start_time = time.time ()
         while self.keep_alive:
             try:
@@ -76,24 +80,26 @@ class GaleaEmulator(threading.Thread):
                     cur_time = time.time ()
                     resp = bytearray (struct.pack ('d', (cur_time - start_time) * 1000))
                     self.server_socket.sendto (resp, self.addr)
-                else:
-                    if msg:
-                        # we dont handle board config characters because they dont change package format
-                        logging.warn('received unexpected string %s', str(msg))
+                elif msg:
+                    # we dont handle board config characters because they dont change package format
+                    logging.warn('received unexpected string %s', str(msg))
             except socket.timeout:
                 logging.debug('timeout for recv')
             except Exception:
                 break
 
             if self.state == State.stream.value:
-                package = list ()
+                package = []
                 for _ in range (19):
                     package.append (self.package_num)
                     self.package_num = self.package_num + 1
                     if self.package_num % 256 == 0:
                         self.package_num = 0
-                    for i in range (1, self.package_size - 8):
-                        package.append (random.randint (0, 255))
+                    package.extend(
+                        random.randint(0, 255)
+                        for _ in range(1, self.package_size - 8)
+                    )
+
                     cur_time = time.time ()
                     timestamp = bytearray (struct.pack ('d', (cur_time - start_time) * 1000))
                     package.extend (timestamp)

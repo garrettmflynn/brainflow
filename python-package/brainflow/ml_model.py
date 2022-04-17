@@ -67,7 +67,7 @@ class MLModuleDLL(object):
 
     def __init__(self):
         if platform.system() == 'Windows':
-            if struct.calcsize("P") * 8 == 64:
+            if struct.calcsize("P") == 8:
                 dll_path = 'lib\\MLModule.dll'
             else:
                 dll_path = 'lib\\MLModule32.dll'
@@ -76,20 +76,21 @@ class MLModuleDLL(object):
         else:
             dll_path = 'lib/libMLModule.so'
         full_path = pkg_resources.resource_filename(__name__, dll_path)
-        if os.path.isfile(full_path):
-            # for python we load dll by direct path but this dll may depend on other dlls and they will not be found!
-            # to solve it we can load all of them before loading the main one or change PATH\LD_LIBRARY_PATH env var.
-            # env variable looks better, since it can be done only once for all dependencies
-            dir_path = os.path.abspath(os.path.dirname(full_path))
-            if platform.system() == 'Windows':
-                os.environ['PATH'] = dir_path + os.pathsep + os.environ.get('PATH', '')
-            else:
-                os.environ['LD_LIBRARY_PATH'] = dir_path + os.pathsep + os.environ.get('LD_LIBRARY_PATH', '')
-            self.lib = ctypes.cdll.LoadLibrary(full_path)
-        else:
+        if not os.path.isfile(full_path):
             raise FileNotFoundError(
-                'Dynamic library %s is missed, did you forget to compile brainflow before installation of python package?' % full_path)
+                f'Dynamic library {full_path} is missed, did you forget to compile brainflow before installation of python package?'
+            )
 
+
+        # for python we load dll by direct path but this dll may depend on other dlls and they will not be found!
+        # to solve it we can load all of them before loading the main one or change PATH\LD_LIBRARY_PATH env var.
+        # env variable looks better, since it can be done only once for all dependencies
+        dir_path = os.path.abspath(os.path.dirname(full_path))
+        if platform.system() == 'Windows':
+            os.environ['PATH'] = dir_path + os.pathsep + os.environ.get('PATH', '')
+        else:
+            os.environ['LD_LIBRARY_PATH'] = dir_path + os.pathsep + os.environ.get('LD_LIBRARY_PATH', '')
+        self.lib = ctypes.cdll.LoadLibrary(full_path)
         self.set_log_level_ml_module = self.lib.set_log_level_ml_module
         self.set_log_level_ml_module.restype = ctypes.c_int
         self.set_log_level_ml_module.argtypes = [
@@ -213,7 +214,7 @@ class MLModel(object):
         res = MLModuleDLL.get_instance().get_version_ml_module(string, string_len, 64)
         if res != BrainflowExitCodes.STATUS_OK.value:
             raise BrainFlowError('unable to request info', res)
-        return string.tobytes().decode('utf-8')[0:string_len[0]]
+        return string.tobytes().decode('utf-8')[:string_len[0]]
 
     def prepare(self) -> None:
         """prepare classifier"""

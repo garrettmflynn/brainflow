@@ -27,13 +27,13 @@ def install_com0com():
     directory = os.path.join(this_directory, 'com0com')
     if not os.path.exists(directory):
         os.makedirs(directory)
-    cmds = [get_isntaller(), '/NCRC', '/S', '/D=%s' % directory]
-    logging.info('running %s' % ' '.join(cmds))
+    cmds = [get_isntaller(), '/NCRC', '/S', f'/D={directory}']
+    logging.info(f"running {' '.join(cmds)}")
     p = subprocess.Popen(cmds, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     if p.returncode != 0:
-        logging.error('stdout is %s' % out)
-        logging.error('stderr is %s' % err)
+        logging.error(f'stdout is {out}')
+        logging.error(f'stderr is {err}')
         raise Exception('com0com installation failure')
     logging.info('Sleeping a few second, it doesnt work in appveyour without it')
     time.sleep(10)
@@ -46,18 +46,27 @@ def get_ports_windows():
     p = subprocess.Popen([os.path.join(directory, 'setupc.exe'), 'remove', '0'],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=directory)
     stdout, stderr = p.communicate()
-    logging.info('remove stdout is %s' % stdout)
-    logging.info('remove stderr is %s' % stderr)
+    logging.info(f'remove stdout is {stdout}')
+    logging.info(f'remove stderr is {stderr}')
 
     m_name = 'COM14'
     s_name = 'COM15'
 
     p = subprocess.Popen(
-        [os.path.join(directory, 'setupc.exe'), 'install', 'PortName=%s' % m_name, 'PortName=%s' % s_name],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=directory)
+        [
+            os.path.join(directory, 'setupc.exe'),
+            'install',
+            f'PortName={m_name}',
+            f'PortName={s_name}',
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=directory,
+    )
+
     stdout, stderr = p.communicate()
-    logging.info('install stdout is %s' % stdout)
-    logging.info('install stderr is %s' % stderr)
+    logging.info(f'install stdout is {stdout}')
+    logging.info(f'install stderr is {stderr}')
 
     if p.returncode != 0:
         raise Exception('com0com failure')
@@ -73,7 +82,7 @@ def test_serial(cmd_list, m_name, s_name):
     listen_thread.start()
 
     cmd_to_run = cmd_list + [s_name]
-    logging.info('Running %s' % ' '.join([str(x) for x in cmd_to_run]))
+    logging.info(f"Running {' '.join([str(x) for x in cmd_to_run])}")
     process = subprocess.Popen(cmd_to_run, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
 
@@ -82,7 +91,11 @@ def test_serial(cmd_list, m_name, s_name):
 
     master.close()
     if process.returncode != 0:
-        raise TestFailureError('Test failed with exit code %s' % str(process.returncode), process.returncode)
+        raise TestFailureError(
+            f'Test failed with exit code {str(process.returncode)}',
+            process.returncode,
+        )
+
 
     return stdout, stderr
 

@@ -7,16 +7,14 @@ from shutil import rmtree
 
 
 def run_command(cmd, cwd=None):
-    print('Running command: %s' % (' '.join(cmd)))
+    print(f"Running command: {' '.join(cmd)}")
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, cwd=cwd)
     while True:
         p.stdout.flush()
-        line = p.stdout.read(1)
-        if line:
+        if line := p.stdout.read(1):
             print(line.decode('utf-8', 'ignore'), end='')
-        else:
-            if p.poll() != None:
-                break
+        elif p.poll() != None:
+            break
     if p.returncode != 0:
         raise ValueError('Process finished with error code %d' % p.returncode)
 
@@ -91,7 +89,7 @@ class VS2017(Generator):
         return '8.1'
 
 def get_win_generators():
-    result = list()
+    result = []
     try:
         output = subprocess.check_output(['C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe', '-property', 'displayName'])
         output = output.decode('utf-8', 'ignore')
@@ -125,22 +123,21 @@ def prepare_args():
         parser.add_argument('--no-oymotion', dest='oymotion', action='store_false')
         parser.set_defaults(oymotion=False)
         parser.add_argument('--msvc-runtime', type=str, choices=['static', 'dynamic'], help='how to link MSVC runtime', required=False, default='static')
-        generators = get_win_generators()
-        if not generators:
-            parser.add_argument('--generator', type=str, help='generator for CMake', required=True)
-            parser.add_argument('--arch', type=str, help='arch for CMake', required=False)
-            parser.add_argument('--cmake-system-version', type=str, help='system version for win', required=False)
-        else:
+        if generators := get_win_generators():
             generator = generators[0]
             parser.add_argument('--generator', type=str, help='generator for CMake', required=False, default=generator.get_generator())
             if generator.get_arch() is not None:
                 parser.add_argument('--arch', type=str, choices=['x64', 'Win32', 'ARM', 'ARM64'], help='arch for CMake', required=False, default=generator.get_arch())
             else:
                 parser.add_argument('--arch', type=str, choices=['x64', 'Win32', 'ARM', 'ARM64'], help='arch for CMake', required=False)
-            if generator.get_sdk_version() is not None:
-                parser.add_argument('--cmake-system-version', type=str, help='system version for win', required=False, default=generator.get_sdk_version())
-            else:
+            if generator.get_sdk_version() is None:
                 parser.add_argument('--cmake-system-version', type=str, help='system version for win', required=False)
+            else:
+                parser.add_argument('--cmake-system-version', type=str, help='system version for win', required=False, default=generator.get_sdk_version())
+        else:
+            parser.add_argument('--generator', type=str, help='generator for CMake', required=True)
+            parser.add_argument('--arch', type=str, help='arch for CMake', required=False)
+            parser.add_argument('--cmake-system-version', type=str, help='system version for win', required=False)
     elif platform.system() == 'Darwin':
         macos_ver = platform.mac_ver()[0]
         versions = [int(x) for x in macos_ver.split('.')]
@@ -176,8 +173,7 @@ def prepare_args():
     parser.add_argument('--ble', dest='ble', action='store_true')
     parser.add_argument('--no-ble', dest='ble', action='store_false')
     parser.set_defaults(ble=ble_default)
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 def config(args):
     if args.clear_build_dir:
@@ -190,13 +186,11 @@ def config(args):
 
     cur_folder = os.path.dirname(os.path.abspath(__file__))
     brainflow_root_folder = os.path.join(cur_folder, '..')
-    cmd_config = list()
-    cmd_config.append('cmake')
-    cmd_config.append('-DCMAKE_INSTALL_PREFIX=%s' % args.cmake_install_prefix)
+    cmd_config = ['cmake', f'-DCMAKE_INSTALL_PREFIX={args.cmake_install_prefix}']
     if hasattr(args, 'cmake_system_version') and args.cmake_system_version:
-        cmd_config.append('-DCMAKE_SYSTEM_VERSION=%s' % args.cmake_system_version)
+        cmd_config.append(f'-DCMAKE_SYSTEM_VERSION={args.cmake_system_version}')
     if hasattr(args, 'brainflow_version') and args.brainflow_version:
-        cmd_config.append('-DBRAINFLOW_VERSION=%s' % args.brainflow_version)
+        cmd_config.append(f'-DBRAINFLOW_VERSION={args.brainflow_version}')
     if hasattr(args, 'use_libftdi') and args.use_libftdi:
         cmd_config.append('-DUSE_LIBFTDI=ON')
     if hasattr(args, 'use_periphery') and args.use_periphery:
@@ -208,15 +202,18 @@ def config(args):
     if hasattr(args, 'oymotion') and args.oymotion:
         cmd_config.append('-DBUILD_OYMOTION_SDK=ON')
     if hasattr(args, 'cmake_osx_architecture') and args.cmake_osx_architecture:
-        cmd_config.append('-DCMAKE_OSX_ARCHITECTURES=%s' % args.cmake_osx_architecture)
+        cmd_config.append(f'-DCMAKE_OSX_ARCHITECTURES={args.cmake_osx_architecture}')
     if hasattr(args, 'cmake_osx_deployment_target') and args.cmake_osx_deployment_target:
-        cmd_config.append('-DCMAKE_OSX_DEPLOYMENT_TARGET=%s' % args.cmake_osx_deployment_target)
+        cmd_config.append(
+            f'-DCMAKE_OSX_DEPLOYMENT_TARGET={args.cmake_osx_deployment_target}'
+        )
+
     if hasattr(args, 'generator') and args.generator:
         cmd_config.extend(['-G', args.generator])
     if hasattr(args, 'arch') and args.arch:
         cmd_config.extend(['-A', args.arch])
     if hasattr(args, 'msvc_runtime'):
-        cmd_config.append('-DMSVC_RUNTIME=%s' % (args.msvc_runtime))
+        cmd_config.append(f'-DMSVC_RUNTIME={args.msvc_runtime}')
     if platform.system() != 'Windows':
         if hasattr(args, 'debug') and args.debug:
             cmd_config.append('-DCMAKE_BUILD_TYPE=Debug')
@@ -231,18 +228,15 @@ def config(args):
 
 def build(args):
     if platform.system() == 'Windows':
-        config = 'Release'
-        if args.debug:
-            config = 'Debug'
+        config = 'Debug' if args.debug else 'Release'
         cmd_build = ['cmake', '--build', '.', '--target', 'install', '--config', config, '-j', str(args.num_jobs), '--parallel', str(args.num_jobs)]
         run_command(cmd_build, cwd=args.build_dir)
+    elif hasattr(args, 'generator') and args.generator and args.generator.lower() == 'ninja':
+        run_command(['ninja', '-j', str(args.num_jobs)], cwd=args.build_dir)
+        run_command(['ninja', 'install'], cwd=args.build_dir)
     else:
-        if hasattr(args, 'generator') and args.generator and args.generator.lower() == 'ninja':
-            run_command(['ninja', '-j', str(args.num_jobs)], cwd=args.build_dir)
-            run_command(['ninja', 'install'], cwd=args.build_dir)
-        else:
-            run_command(['make', '-j', str(args.num_jobs)], cwd=args.build_dir)
-            run_command(['make', 'install'], cwd=args.build_dir)
+        run_command(['make', '-j', str(args.num_jobs)], cwd=args.build_dir)
+        run_command(['make', 'install'], cwd=args.build_dir)
 
 
 def main():

@@ -53,7 +53,7 @@ def main():
     if end byte is 0xC0 there are accel data in data[BoardShim.get_accel_channels(args.board_id)[....]] else there are zeros
     if end byte is 0xC1 there are analog data in data[BoardShim.get_analog_channels(args.board_id)[....]] else there are zeros
     """
-    print(data[BoardShim.get_other_channels(args.board_id)[0]][0:5])  # should be standard end byte 0xC0
+    print(data[BoardShim.get_other_channels(args.board_id)[0]][:5])
     print(data[BoardShim.get_other_channels(args.board_id)[0]][-5:])  # should be analog and byte 0xC1
 
     DataFilter.write_file(data, 'cyton_data.csv', 'w')

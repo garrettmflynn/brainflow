@@ -34,7 +34,7 @@ class GaleaEmulator(object):
         self.transaction_size = 19
         self.package_size = 72
 
-    def run (self):
+    def run(self):
         start_time = time.time ()
         while True:
             try:
@@ -49,19 +49,16 @@ class GaleaEmulator(object):
                     cur_time = time.time ()
                     resp = bytearray (struct.pack ('d', (cur_time - start_time) * 1000))
                     self.server_socket.sendto (resp, self.addr)
-                else:
-                    if msg:
-                        # we dont handle board config characters because they dont change package format
-                        logging.warn('received unexpected string %s', str(msg))
+                elif msg:
+                    # we dont handle board config characters because they dont change package format
+                    logging.warn('received unexpected string %s', str(msg))
             except socket.timeout:
                 logging.debug('timeout for recv')
 
             if self.state == State.stream.value:
-                transaction = list ()
+                transaction = []
                 for _ in range (self.transaction_size):
-                    single_package = list ()
-                    for i in range (self.package_size):
-                        single_package.append (random.randint (0, 255))
+                    single_package = [random.randint (0, 255) for _ in range (self.package_size)]
                     single_package[0] = self.package_num
 
                     cur_time = time.time ()
@@ -85,7 +82,7 @@ class GaleaEmulator(object):
                         self.package_num = 0
                     transaction.append(single_package)
                 try:
-                    package = list()
+                    package = []
                     for i in range(self.transaction_size):
                         package.extend(bytes(transaction[i]))
                     self.server_socket.sendto(bytes(package), self.addr)

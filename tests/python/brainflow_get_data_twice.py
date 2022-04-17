@@ -9,9 +9,9 @@ from brainflow.ml_model import MLModel
 
 
 def main():
-    print('BoardShim version: ' + BoardShim.get_version())
-    print('DataFilter version: ' + DataFilter.get_version())
-    print('MLModel version: ' + MLModel.get_version())
+    print(f'BoardShim version: {BoardShim.get_version()}')
+    print(f'DataFilter version: {DataFilter.get_version()}')
+    print(f'MLModel version: {MLModel.get_version()}')
     BoardShim.enable_dev_board_logger()
 
     board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, BrainFlowInputParams())

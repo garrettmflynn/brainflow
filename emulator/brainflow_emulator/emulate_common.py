@@ -41,10 +41,12 @@ class Listener(threading.Thread):
                 self.writer_process.daemon = True
                 self.writer_process.start()
             elif res == b's':
-                if self.writer_process is not None:
-                    if self.writer_process.is_alive():
-                        self.writer_process.need_data = False
-                        self.writer_process.join()
+                if (
+                    self.writer_process is not None
+                    and self.writer_process.is_alive()
+                ):
+                    self.writer_process.need_data = False
+                    self.writer_process.join()
             else:
                 # we dont handle commands to turn on/off channels, gain signal and so on. such commands dont change package format
                 logging.warning('got unexpected command "%s"' % res)
@@ -66,13 +68,10 @@ class CytonWriter(threading.Thread):
             if self.package_num % 256 == 0:
                 self.package_num = 0
 
-            package = list()
-            package.append(0xA0)
-            package.append(self.package_num)
-            for i in range(2, self.package_size - 1):
-                package.append(randint(0, 255))
+            package = [160, self.package_num]
+            package.extend(randint(0, 255) for _ in range(2, self.package_size - 1))
             package.append(0xC0)
-            logging.debug('package is %s' % ' '.join([str(x) for x in package]))
+            logging.debug(f"package is {' '.join([str(x) for x in package])}")
             self.write(self.port, bytes(package))
 
             self.package_num = self.package_num + 1

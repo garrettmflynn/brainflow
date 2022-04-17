@@ -4,7 +4,7 @@ import os
 def write_knn_model(data):
     # we prepare dataset in C++ code in compile time, need to generate header for it
 
-    y_string = '%s' % (', '.join([str(x) for x in data[1]]))
+    y_string = f"{', '.join([str(x) for x in data[1]])}"
     x_string_tmp = ['{' + ', '.join([str(y) for y in x]) + '}' for x in data[0]]
     x_string = '%s' % (',\n'.join(x_string_tmp))
     file_content = '''
@@ -36,7 +36,7 @@ extern int brainflow_focus_y[%d];
 
 def write_model(intercept, coefs, model_type):
     # we prepare dataset in C++ code in compile time, need to generate header for it
-    coefficients_string = '%s' % (','.join([str(x) for x in coefs[0]]))
+    coefficients_string = f"{','.join([str(x) for x in coefs[0]])}"
     file_content = '''
 #include "%s"
 

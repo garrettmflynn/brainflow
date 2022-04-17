@@ -30,8 +30,8 @@ class Graph:
 
 
     def _init_timeseries(self):
-        self.plots = list()
-        self.curves = list()
+        self.plots = []
+        self.curves = []
         for i in range(len(self.exg_channels)):
             p = self.win.addPlot(row=i,col=0)
             p.showAxis('left', False)
